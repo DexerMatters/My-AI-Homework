@@ -1,0 +1,8 @@
+name: my-project
+channels:
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - matplotlib
