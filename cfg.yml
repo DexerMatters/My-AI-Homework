@@ -1,0 +1,49 @@
+models:
+  dense-net-121:
+    model: "DenseNet121"
+    c1: 6
+    c2: 12
+    c3: 24
+    c4: 16
+  dense-net-169:
+    model: "DenseNet169"
+    c1: 6
+    c2: 12
+    c3: 32
+    c4: 32
+  dense-net-201:
+    model: "DenseNet201"
+    c1: 6
+    c2: 12
+    c3: 48
+    c4: 32
+  dense-net-264:
+    model: "DenseNet264"
+    c1: 6
+    c2: 12
+    c3: 64
+    c4: 48
+
+train:
+  batch_size: 32
+  kfolds: 5
+  epochs: 100
+  learning_rate: 0.001
+  optimizer: "sgd"
+  momentum: 0.9
+  loss: "cross_entropy"
+  metrics: ["accuracy"]
+  l1: 0.01
+  l2: 0.01
+  lr_decay_rate: 0.01
+  lr_decay_step: 10
+
+data:
+  root: "./data"
+  augmentation:
+    rotation_range: 20
+    horizontal_flip_randomness: 0.5
+    vertical_flip_randomness: 0.5
+    cj_brightness_randomness: 0.5
+
+  validation_split: 0.2
