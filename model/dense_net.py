@@ -2,35 +2,34 @@ import os
 
 import torch
 import torch.nn as nn
-import utils
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class DenseNet(nn.Module):
-    def __init__(self, n_class, name):
+    def __init__(self, config, n_class, name):
         super(DenseNet, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 6, 7, stride=2, padding=7),
             nn.MaxPool2d(6, 2),
         )
 
-        cs = utils.get_config()["models"][name]
+        cs = config[name]["block_num"]
 
-        self.layer_dense2 = DenseBlock(cs["c1"])
-        self.transition2 = self.Transition_Layer(cs["c1"] * 5, cs["c2"])
+        self.layer_dense2 = DenseBlock(cs[0])
+        self.transition2 = self.Transition_Layer(cs[0] * 5, cs[1])
 
-        self.layer_dense3 = DenseBlock(cs["c2"])
-        self.transition3 = self.Transition_Layer(cs["c2"] * 5, cs["c3"])
+        self.layer_dense3 = DenseBlock(cs[1])
+        self.transition3 = self.Transition_Layer(cs[1] * 5, cs[2])
 
-        self.layer_dense4 = DenseBlock(cs["c3"])
-        self.transition4 = self.Transition_Layer(cs["c3"] * 5, cs["c4"])
+        self.layer_dense4 = DenseBlock(cs[2])
+        self.transition4 = self.Transition_Layer(cs[2] * 5, cs[3])
 
-        self.layer_dense5 = DenseBlock(cs["c4"])
+        self.layer_dense5 = DenseBlock(cs[3])
 
         self.layer_pool5 = nn.AvgPool2d(7, 7)
 
-        self.Linear = nn.Linear(240, n_class)
+        self.linear = nn.Linear(cs[3] * 5, n_class)
 
     def Transition_Layer(self, in_, out):
         transition = nn.Sequential(
@@ -58,15 +57,8 @@ class DenseNet(nn.Module):
 
         x = x.view(x.size(0), -1)
 
-        x = self.Linear(x)
+        x = self.linear(x)
         return x
-
-    @staticmethod
-    def get_model(name, n_class):
-        if name in ["dense-net-121", "dense-net-169", "dense-net-201", "dense-net-264"]:
-            return DenseNet(n_class, name)
-        else:
-            raise ValueError("Model not found")
 
 
 class DenseBlock(nn.Module):
@@ -104,11 +96,3 @@ class DenseBlock(nn.Module):
         x = torch.cat((x4, x3, x2, x1, x), dim=1)
 
         return x
-
-
-if __name__ == "__main__":
-    inputs = torch.randn(10, 3, 224, 224)
-    model = DenseNet(n_class=6)
-    outputs = model(inputs)
-    print(model)
-    print(outputs.shape)

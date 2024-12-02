@@ -1,34 +1,34 @@
 models:
-  dense-net-121:
-    model: "DenseNet121"
-    c1: 6
-    c2: 12
-    c3: 24
-    c4: 16
-  dense-net-169:
-    model: "DenseNet169"
-    c1: 6
-    c2: 12
-    c3: 32
-    c4: 32
-  dense-net-201:
-    model: "DenseNet201"
-    c1: 6
-    c2: 12
-    c3: 48
-    c4: 32
-  dense-net-264:
-    model: "DenseNet264"
-    c1: 6
-    c2: 12
-    c3: 64
-    c4: 48
+  densenet121:
+    block_num: [6, 12, 24, 16]
+  densenet169:
+    block_num: [6, 12, 32, 32]
+  densenet201:
+    block_num: [6, 12, 48, 32]
+  densenet264:
+    block_num: [6, 12, 64, 48]
+
+  resnet18:
+    block_mode: "basic"
+    block_num: [2, 2, 2, 2]
+  resnet34:
+    block_mode: "basic"
+    block_num: [3, 4, 6, 3]
+  resnet50:
+    block_mode: "bottleneck"
+    block_num: [3, 4, 6, 3]
+  resnet101:
+    block_mode: "bottleneck"
+    block_num: [3, 4, 23, 3]
+  resnet152:
+    block_mode: "bottleneck"
+    block_num: [3, 8, 36, 3]
 
 train:
   batch_size: 32
   kfolds: 5
   epochs: 100
-  learning_rate: 0.001
+  lr: 0.001
   optimizer: "sgd"
   momentum: 0.9
   loss: "cross_entropy"
@@ -45,5 +45,4 @@ data:
     horizontal_flip_randomness: 0.5
     vertical_flip_randomness: 0.5
     cj_brightness_randomness: 0.5
-
   validation_split: 0.2
