@@ -7,6 +7,7 @@ import tqdm
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import adjust_learning_rate
 
 
 # Create one plot for loss and accuracy
@@ -28,7 +29,8 @@ def main():
 
     config = utils.get_config()["train"]
     models = utils.get_config()["models"]
-    model = mdl.get_model("densenet201", models, 150)
+    aug = utils.get_config()["data"]["use_augment"]
+    model = mdl.get_model("densenet264", models, 150)
 
     # Select the loss function
     criterion = utils.get_criterion()
@@ -36,7 +38,7 @@ def main():
     # Select the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = ds.ImageDataset("./data/PokemonData/")
+    dataset = ds.ImageDataset("./data/")
     batch_size = config["batch_size"]
 
     # K-fold cross validation
@@ -44,15 +46,15 @@ def main():
     for fold, (train_idx, test_idx) in enumerate(kf.split(dataset)):
 
         # Reset the model
-        model = mdl.get_model("densenet201", models, 150)
+        model = mdl.get_model("densenet264", models, 150)
         model.to(device)
         optimizer = utils.get_optimizer(model)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, step_size=config["lr_decay_step"], gamma=config["lr_decay_rate"]
-        )
+        # lr_scheduler = torch.optim.lr_scheduler.StepLR(
+        #     optimizer, step_size=config["lr_decay_step"], gamma=config["lr_decay_rate"]
+        # )
 
         # Create the train and test dataloaders
-        train_dataset = ds.ImageSubset(dataset, train_idx, augmented=True)
+        train_dataset = ds.ImageSubset(dataset, train_idx, augmented=aug)
         test_dataset = ds.ImageSubset(dataset, test_idx, augmented=False)
 
         # Train the model
@@ -64,7 +66,10 @@ def main():
 
         best_accuracy = 0.0
         for epoch in range(config["epochs"]):
-
+            
+            # Update the learning rate
+            adjust_learning_rate(optimizer, epoch, config['lr_strategy'], config['lr_decay_step'])
+            
             # Train the model
             loss = train(
                 model, train_dataloader, criterion, optimizer, device, loss_history
@@ -100,8 +105,7 @@ def main():
             plt.savefig(f"./checkpoints/fold_{fold}/loss_accuracy.png")
             plt.pause(0.01)
 
-            # Update the learning rate
-            lr_scheduler.step()
+            # lr_scheduler.step()
 
 
 def train(model, train_dataloader, criterion, optimizer, device, loss_history):

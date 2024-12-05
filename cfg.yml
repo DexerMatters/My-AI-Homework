@@ -32,17 +32,18 @@ train:
   momentum: 0.9
   loss: "cross_entropy"
   metrics: [ "accuracy" ]
-  l1: 0.01
-  l2: 0.01
+  l1: 0.
+  l2: 0.001
   lr: 0.001
-  lr_decay_rate: 0.1
-  lr_decay_step: 25
+  lr_strategy: [1.0e-2, 2.5e-3, 1.0e-3, 2.5e-4, 1.0e-4]
+  lr_decay_step: 20
 
 data:
   root: "./data"
+  use_augment: 0
   augmentation:
-    rotation_range: 20
-    horizontal_flip_randomness: 0.5
-    vertical_flip_randomness: 0.5
-    cj_brightness_randomness: 0.5
+    rotation_range: 10
+    horizontal_flip_randomness: 0.1
+    vertical_flip_randomness: 0.1
+    cj_brightness_randomness: 0.1
   validation_split: 0.2
