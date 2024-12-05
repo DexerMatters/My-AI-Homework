@@ -1,8 +1,8 @@
 name: my-project
 channels:
-  - defaults
+- defaults
 dependencies:
-  - python
-  - numpy
-  - pandas
-  - matplotlib
+- python
+- numpy
+- pandas
+- matplotlib

@@ -1,42 +1,42 @@
 models:
   densenet121:
-    block_num: [6, 12, 24, 16]
+    block_num: [ 6, 12, 24, 16 ]
   densenet169:
-    block_num: [6, 12, 32, 32]
+    block_num: [ 6, 12, 32, 32 ]
   densenet201:
-    block_num: [6, 12, 48, 32]
+    block_num: [ 6, 12, 48, 32 ]
   densenet264:
-    block_num: [6, 12, 64, 48]
+    block_num: [ 6, 12, 64, 48 ]
 
   resnet18:
     block_mode: "basic"
-    block_num: [2, 2, 2, 2]
+    block_num: [ 2, 2, 2, 2 ]
   resnet34:
     block_mode: "basic"
-    block_num: [3, 4, 6, 3]
+    block_num: [ 3, 4, 6, 3 ]
   resnet50:
     block_mode: "bottleneck"
-    block_num: [3, 4, 6, 3]
+    block_num: [ 3, 4, 6, 3 ]
   resnet101:
     block_mode: "bottleneck"
-    block_num: [3, 4, 23, 3]
+    block_num: [ 3, 4, 23, 3 ]
   resnet152:
     block_mode: "bottleneck"
-    block_num: [3, 8, 36, 3]
+    block_num: [ 3, 8, 36, 3 ]
 
 train:
   batch_size: 32
   kfolds: 5
   epochs: 100
-  lr: 0.001
   optimizer: "sgd"
   momentum: 0.9
   loss: "cross_entropy"
-  metrics: ["accuracy"]
+  metrics: [ "accuracy" ]
   l1: 0.01
   l2: 0.01
-  lr_decay_rate: 0.01
-  lr_decay_step: 10
+  lr: 0.001
+  lr_decay_rate: 0.1
+  lr_decay_step: 25
 
 data:
   root: "./data"
