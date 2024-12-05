@@ -47,7 +47,7 @@ def get_optimizer(model):
             optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
         case "sgd":
             optimizer = torch.optim.SGD(
-                model.parameters(), lr=config["lr"], momentum=config["momentum"]
+                model.parameters(), lr=config["lr"], momentum=config["momentum"], weight_decay=config["l2"]
             )
         case _:
             raise ValueError(f"Optimizer {config['optimizer']} not supported")
@@ -70,3 +70,9 @@ def new_test_dataloader(dataset, batch_size):
         pin_memory=True,
         shuffle=False,
     )
+
+def adjust_learning_rate(optimizer, epoch, lr_strategy, lr_decay_step):
+    current_learning_rate = lr_strategy[epoch // lr_decay_step]
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = current_learning_rate
+        print('Learning rate sets to {}.'.format(param_group['lr']))
