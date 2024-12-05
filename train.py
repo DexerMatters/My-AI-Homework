@@ -39,12 +39,14 @@ def main():
     dataset = ds.ImageDataset("./data/PokemonData/")
     batch_size = config["batch_size"]
 
+    model_name = config["model"]
+
     # K-fold cross validation
     kf = KFold(n_splits=config["kfolds"], shuffle=True)
     for fold, (train_idx, test_idx) in enumerate(kf.split(dataset)):
 
         # Reset the model
-        model = mdl.get_model("densenet201", models, 150)
+        model = mdl.get_model(model_name, models, 150)
         model.to(device)
         optimizer = utils.get_optimizer(model)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(
@@ -72,6 +74,7 @@ def main():
 
             # Test the model
             validate(
+                model_name,
                 model,
                 loss,
                 test_dataloader,
@@ -97,7 +100,7 @@ def main():
             ax[2].plot(auc_history, label="Accuracy")
             ax[2].legend()
 
-            plt.savefig(f"./checkpoints/fold_{fold}/loss_accuracy.png")
+            plt.savefig(f"./checkpoints/{model_name}/fold_{fold}/loss_accuracy.png")
             plt.pause(0.01)
 
             # Update the learning rate
@@ -121,6 +124,7 @@ def train(model, train_dataloader, criterion, optimizer, device, loss_history):
 
 
 def validate(
+    model_name,
     model,
     loss,
     test_dataloader,
@@ -150,15 +154,20 @@ def validate(
             best_accuracy = accuracy
 
             # Create the checkpoint directory
-            os.makedirs(f"./checkpoints/fold_{fold}", exist_ok=True)
+            os.makedirs(f"./checkpoints/{model_name}/fold_{fold}", exist_ok=True)
 
             torch.save(
-                model.state_dict(), f"./checkpoints/fold_{fold}/model_best_fold.pth"
+                model.state_dict(),
+                f"./checkpoints/{model_name}/fold_{fold}/model_best_fold.pth",
             )
 
             # Save the model metrics
-            np.save(f"./checkpoints/fold_{fold}/loss_history.npy", loss_history)
-            np.save(f"./checkpoints/fold_{fold}/auc_history.npy", auc_history)
+            np.save(
+                f"./checkpoints/{model_name}/fold_{fold}/loss_history.npy", loss_history
+            )
+            np.save(
+                f"./checkpoints/{model_name}/fold_{fold}/auc_history.npy", auc_history
+            )
 
 
 plt.show(block=False)

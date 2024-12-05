@@ -25,6 +25,7 @@ models:
     block_num: [ 3, 8, 36, 3 ]
 
 train:
+  model: "densenet264"
   batch_size: 32
   kfolds: 5
   epochs: 100
@@ -41,8 +42,8 @@ train:
 data:
   root: "./data"
   augmentation:
-    rotation_range: 20
-    horizontal_flip_randomness: 0.5
-    vertical_flip_randomness: 0.5
-    cj_brightness_randomness: 0.5
+    rotation_range: 15
+    horizontal_flip_randomness: 0.2
+    vertical_flip_randomness: 0.2
+    cj_brightness_randomness: 0.2
   validation_split: 0.2
