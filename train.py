@@ -56,7 +56,6 @@ def main():
     val_loss_history = []
     auc_history = []
 
-    best_accuracy = 0.0
     for epoch in range(config["epochs"]):
 
         # Update the learning rate
@@ -73,7 +72,12 @@ def main():
         validate(model, val_dataloader, criterion, device, val_loss_history)
 
         # Test the model
-        test(model, loss, test_dataloader, device, auc_history, epoch)
+        test(model, test_dataloader, device, auc_history)
+
+        # Print the loss and accuracy
+        print(
+            f"Epoch:\t{epoch + 1}\nLoss:\t{loss}\nVal Loss:\t{val_loss_history[-1]}\n Accuracy:\t{auc_history[-1]}"
+        )
 
         # Save the model
         checkpoint(
@@ -130,11 +134,9 @@ def validate(model, val_dataloader, criterion, device, val_loss_history):
 
 def test(
     model,
-    loss,
     test_dataloader,
     device,
     auc_history,
-    epoch,
 ):
     model.eval()
     with torch.no_grad():
@@ -148,15 +150,13 @@ def test(
             correct += (predicted == labels).sum().item()
         accuracy = correct / total
         auc_history.append(accuracy)
-        print(f"Epoch {epoch}, Loss {loss}, Accuracy: {accuracy}")
 
 
 def checkpoint(
     model, model_name, accuracy, loss_history, val_loss_history, auc_history
 ):
     # Save the best model
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
+    if accuracy == max(auc_history):
 
         # Create the checkpoint directory
         os.makedirs(f"./checkpoints/{model_name}/{today}", exist_ok=True)
