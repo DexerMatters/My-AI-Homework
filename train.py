@@ -48,9 +48,9 @@ def main():
 
     train_dataset, test_dataset, val_dataset = utils.split_dataset(dataset)
 
-    train_dataloader = utils.new_train_dataloader(train_dataset, batch_size)
-    test_dataloader = utils.new_test_dataloader(test_dataset, 1)
-    val_dataloader = utils.new_val_dataloader(val_dataset, 1)
+    train_dataloader, val_dataloader, test_dataloader = utils.new_dataloaders(
+        train_dataset, val_dataset, test_dataset, [batch_size, 1, 1]
+    )
 
     loss_history = []
     val_loss_history = []
