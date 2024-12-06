@@ -29,8 +29,6 @@ def main():
 
     config = utils.get_config()["train"]
     models = utils.get_config()["models"]
-    aug = utils.get_config()["data"]["use_augment"]
-    validation_split = utils.get_config()["data"]["splits"]
 
     # Select the loss function
     criterion = utils.get_criterion()
