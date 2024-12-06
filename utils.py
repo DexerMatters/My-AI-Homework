@@ -58,35 +58,18 @@ def get_optimizer(model):
     return optimizer
 
 
-def new_train_dataloader(dataset, batch_size):
-    return torch.utils.data.DataLoader(
-        dataset,
-        batch_size,
-        sampler=torch.utils.data.RandomSampler(dataset),
-        pin_memory=True,
+def new_dataloaders(train_set, val_set, test_set, batch_sizes):
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=batch_sizes[0], shuffle=True
     )
-
-
-def new_val_dataloader(dataset, batch_size):
-    return torch.utils.data.DataLoader(
-        dataset,
-        batch_size,
-        sampler=torch.utils.data.SequentialSampler(dataset),
-        pin_memory=True,
-    )
-
-
-def new_test_dataloader(dataset, batch_size):
-    return torch.utils.data.DataLoader(
-        dataset,
-        batch_size,
-        sampler=torch.utils.data.SequentialSampler(dataset),
-        pin_memory=True,
-    )
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_sizes[1])
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_sizes[2])
+    return train_loader, val_loader, test_loader
 
 
 def split_dataset(ds):
     splits = get_config()["data"]["splits"]
+    use_augment = get_config()["data"]["use_augment"] == 1
     dataset_size = len(ds)
 
     # Split the dataset
@@ -95,7 +78,7 @@ def split_dataset(ds):
 
     # Randomly split the dataset into ImageDataset objects
     indices = torch.randperm(dataset_size).tolist()
-    train_dataset = dataset.ImageSubset(ds, indices[:train_size], augmented=True)
+    train_dataset = dataset.ImageSubset(ds, indices[:train_size], use_augment)
     test_dataset = dataset.ImageSubset(ds, indices[train_size : train_size + test_size])
     val_dataset = dataset.ImageSubset(ds, indices[train_size + test_size :])
     return train_dataset, test_dataset, val_dataset

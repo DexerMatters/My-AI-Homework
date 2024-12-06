@@ -41,7 +41,7 @@ train:
 
 data:
   root: "./data"
-  use_augment: 0
+  use_augment: 1
   augmentation:
     rotation_range: 15
     horizontal_flip_randomness: 0.2
