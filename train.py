@@ -1,5 +1,6 @@
 import os
 from sklearn.model_selection import KFold
+from datetime import date
 import dataset as ds
 import model as mdl
 import torch
@@ -12,16 +13,15 @@ from utils import adjust_learning_rate
 
 # Create one plot for loss and accuracy
 # their curves will be plotted in the same plot
-fig, ax = plt.subplots(3, 1, figsize=(16, 12), dpi=80)
-ax[0].set_title("Loss and Accuracy")
+fig, ax = plt.subplots(2, 1, figsize=(16, 12), dpi=80)
+ax[0].set_title("Loss")
+ax[1].set_title("Accuracy")
 ax[0].set_xlabel("Epoch")
-ax[0].set_ylabel("Loss/Accuracy")
-ax[1].set_title("Loss")
 ax[1].set_xlabel("Epoch")
-ax[1].set_ylabel("Loss")
-ax[2].set_title("Accuracy")
-ax[2].set_xlabel("Epoch")
-ax[2].set_ylabel("Accuracy")
+
+
+# Get the current date
+today = date.strftime(date.today(), "%m-%d-%H-%M")
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     config = utils.get_config()["train"]
     models = utils.get_config()["models"]
     aug = utils.get_config()["data"]["use_augment"]
-    model = mdl.get_model("densenet264", models, 150)
+    validation_split = utils.get_config()["data"]["splits"]
 
     # Select the loss function
     criterion = utils.get_criterion()
@@ -42,79 +42,69 @@ def main():
     batch_size = config["batch_size"]
 
     model_name = config["model"]
+    model = mdl.get_model(model_name, models, 150)
+    model.to(device)
+    optimizer = utils.get_optimizer(model)
 
-    # K-fold cross validation
-    kf = KFold(n_splits=config["kfolds"], shuffle=True)
-    for fold, (train_idx, test_idx) in enumerate(kf.split(dataset)):
+    train_dataset, test_dataset, val_dataset = utils.split_dataset(dataset)
 
-        # Reset the model
-        model = mdl.get_model(model_name, models, 150)
-        model.to(device)
-        optimizer = utils.get_optimizer(model)
-        # lr_scheduler = torch.optim.lr_scheduler.StepLR(
-        #     optimizer, step_size=config["lr_decay_step"], gamma=config["lr_decay_rate"]
-        # )
+    train_dataloader = utils.new_train_dataloader(train_dataset, batch_size)
+    test_dataloader = utils.new_test_dataloader(test_dataset, 1)
+    val_dataloader = utils.new_val_dataloader(val_dataset, 1)
 
-        # Create the train and test dataloaders
-        train_dataset = ds.ImageSubset(dataset, train_idx, augmented=aug)
-        test_dataset = ds.ImageSubset(dataset, test_idx, augmented=False)
+    loss_history = []
+    val_loss_history = []
+    auc_history = []
+
+    best_accuracy = 0.0
+    for epoch in range(config["epochs"]):
+
+        # Update the learning rate
+        adjust_learning_rate(
+            optimizer, epoch, config["lr_strategy"], config["lr_decay_step"]
+        )
 
         # Train the model
-        train_dataloader = utils.new_train_dataloader(train_dataset, batch_size)
-        test_dataloader = utils.new_test_dataloader(test_dataset, batch_size)
+        loss = train(
+            model, train_dataloader, criterion, optimizer, device, loss_history
+        )
 
-        loss_history = []
-        auc_history = []
+        # Validate the model
+        validate(model, val_dataloader, criterion, device, val_loss_history)
 
-        best_accuracy = 0.0
-        for epoch in range(config["epochs"]):
-            
-            # Update the learning rate
-            adjust_learning_rate(optimizer, epoch, config['lr_strategy'], config['lr_decay_step'])
-            
-            # Train the model
-            loss = train(
-                model, train_dataloader, criterion, optimizer, device, loss_history
-            )
+        # Test the model
+        test(model, loss, test_dataloader, device, auc_history, epoch)
 
-            # Test the model
-            validate(
-                model_name,
-                model,
-                loss,
-                test_dataloader,
-                device,
-                loss_history,
-                auc_history,
-                best_accuracy,
-                fold,
-                epoch,
-            )
+        # Save the model
+        checkpoint(
+            model,
+            model_name,
+            auc_history[-1],
+            loss_history,
+            val_loss_history,
+            auc_history,
+        )
 
-            # Visualize the loss and accuracy
-            ax[0].cla()
-            ax[0].plot(loss_history, label="Loss")
-            ax[0].plot(auc_history, label="Accuracy")
-            ax[0].legend()
+        # Visualize the loss and accuracy
+        ax[0].cla()
+        ax[0].plot(loss_history, label="Loss", color="blue")
+        ax[0].plot(val_loss_history, label="Validation Loss", color="red")
+        ax[0].legend()
 
-            ax[1].cla()
-            ax[1].plot(loss_history, label="Loss")
-            ax[1].legend()
+        ax[1].cla()
+        ax[1].plot(auc_history, label="Accuracy")
+        ax[1].legend()
 
-            ax[2].cla()
-            ax[2].plot(auc_history, label="Accuracy")
-            ax[2].legend()
+        plt.savefig(f"./checkpoints/{model_name}/{today}/loss_accuracy.png")
+        plt.pause(0.01)
 
-            plt.savefig(f"./checkpoints/{model_name}/fold_{fold}/loss_accuracy.png")
-            plt.pause(0.01)
-
-            # lr_scheduler.step()
+        # lr_scheduler.step()
 
 
 def train(model, train_dataloader, criterion, optimizer, device, loss_history):
     model.train()
     losses = []
-    for images, labels in tqdm.tqdm(train_dataloader):
+    for images, labels in tqdm.tqdm(train_dataloader, desc="Training"):
         images, labels = images.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = model(images)
@@ -127,23 +117,30 @@ def train(model, train_dataloader, criterion, optimizer, device, loss_history):
     return loss
 
 
-def validate(
-    model_name,
+def validate(model, val_dataloader, criterion, device, val_loss_history):
+    model.eval()
+    valid_loss = 0.00
+    with torch.no_grad():
+        for images, labels in tqdm.tqdm(val_dataloader, desc="Validation"):
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            valid_loss += criterion(outputs, labels).item()
+    val_loss_history.append(valid_loss)
+
+
+def test(
     model,
     loss,
     test_dataloader,
     device,
-    loss_history,
     auc_history,
-    best_accuracy,
-    fold,
     epoch,
 ):
     model.eval()
     with torch.no_grad():
         total = 0
         correct = 0
-        for images, labels in tqdm.tqdm(test_dataloader):
+        for images, labels in tqdm.tqdm(test_dataloader, desc="Testing"):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
@@ -151,27 +148,30 @@ def validate(
             correct += (predicted == labels).sum().item()
         accuracy = correct / total
         auc_history.append(accuracy)
-        print(f"Fold {fold}, Epoch {epoch}, Loss {loss}, Accuracy: {accuracy}")
+        print(f"Epoch {epoch}, Loss {loss}, Accuracy: {accuracy}")
 
-        # Save the best model
-        if accuracy > best_accuracy:
-            best_accuracy = accuracy
 
-            # Create the checkpoint directory
-            os.makedirs(f"./checkpoints/{model_name}/fold_{fold}", exist_ok=True)
+def checkpoint(
+    model, model_name, accuracy, loss_history, val_loss_history, auc_history
+):
+    # Save the best model
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
 
-            torch.save(
-                model.state_dict(),
-                f"./checkpoints/{model_name}/fold_{fold}/model_best_fold.pth",
-            )
+        # Create the checkpoint directory
+        os.makedirs(f"./checkpoints/{model_name}/{today}", exist_ok=True)
 
-            # Save the model metrics
-            np.save(
-                f"./checkpoints/{model_name}/fold_{fold}/loss_history.npy", loss_history
-            )
-            np.save(
-                f"./checkpoints/{model_name}/fold_{fold}/auc_history.npy", auc_history
-            )
+        torch.save(
+            model.state_dict(),
+            f"./checkpoints/{model_name}/{today}/model_best_fold.pth",
+        )
+
+        # Save the model metrics
+        np.save(f"./checkpoints/{model_name}/{today}/loss_history.npy", loss_history)
+        np.save(
+            f"./checkpoints/{model_name}/{today}/val_loss_history.npy", val_loss_history
+        )
+        np.save(f"./checkpoints/{model_name}/{today}/auc_history.npy", auc_history)
 
 
 plt.show(block=False)

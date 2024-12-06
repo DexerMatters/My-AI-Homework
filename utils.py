@@ -1,5 +1,6 @@
 import torch
 import yaml
+import dataset
 
 config = [None]
 
@@ -47,7 +48,10 @@ def get_optimizer(model):
             optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
         case "sgd":
             optimizer = torch.optim.SGD(
-                model.parameters(), lr=config["lr"], momentum=config["momentum"], weight_decay=config["l2"]
+                model.parameters(),
+                lr=config["lr"],
+                momentum=config["momentum"],
+                weight_decay=config["l2"],
             )
         case _:
             raise ValueError(f"Optimizer {config['optimizer']} not supported")
@@ -63,16 +67,42 @@ def new_train_dataloader(dataset, batch_size):
     )
 
 
+def new_val_dataloader(dataset, batch_size):
+    return torch.utils.data.DataLoader(
+        dataset,
+        batch_size,
+        sampler=torch.utils.data.SequentialSampler(dataset),
+        pin_memory=True,
+    )
+
+
 def new_test_dataloader(dataset, batch_size):
     return torch.utils.data.DataLoader(
         dataset,
         batch_size,
+        sampler=torch.utils.data.SequentialSampler(dataset),
         pin_memory=True,
-        shuffle=False,
     )
+
+
+def split_dataset(ds):
+    splits = get_config()["data"]["splits"]
+    dataset_size = len(ds)
+
+    # Split the dataset
+    train_size = int(splits[0] * dataset_size)
+    test_size = int(splits[1] * dataset_size)
+
+    # Randomly split the dataset into ImageDataset objects
+    indices = torch.randperm(dataset_size).tolist()
+    train_dataset = dataset.ImageSubset(ds, indices[:train_size], augmented=True)
+    test_dataset = dataset.ImageSubset(ds, indices[train_size : train_size + test_size])
+    val_dataset = dataset.ImageSubset(ds, indices[train_size + test_size :])
+    return train_dataset, test_dataset, val_dataset
+
 
 def adjust_learning_rate(optimizer, epoch, lr_strategy, lr_decay_step):
     current_learning_rate = lr_strategy[epoch // lr_decay_step]
     for param_group in optimizer.param_groups:
-        param_group['lr'] = current_learning_rate
-        print('Learning rate sets to {}.'.format(param_group['lr']))
+        param_group["lr"] = current_learning_rate
+        print("Learning rate sets to {}.".format(param_group["lr"]))

@@ -13,8 +13,8 @@ class ResNet(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
 
-        block_mode = config["models"][name]["block_mode"]
-        block_num = config["models"][name]["block_num"]
+        block_mode = config[name]["block_mode"]
+        block_num = config[name]["block_num"]
         block = ResidualBlockBasic if block_mode == "basic" else ResidualBlockBottleneck
 
         self.layer1 = self.make_layer(64, block_num[0], 1, block)

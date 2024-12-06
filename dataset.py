@@ -26,17 +26,17 @@ class ImageDataset(Dataset):
         return self.dataset[idx]
 
 
-class ImageSubset(Dataset):
+class ImageSubset(torch.utils.data.Subset):
     def __init__(self, dataset, indices, augmented=False):
-        self.dataset = dataset
-        self.indices = indices
+        super().__init__(dataset, indices)
         self.augmented = augmented
+        self.indices = indices
 
     def __len__(self):
         return len(self.indices)
 
     def __getitem__(self, idx):
-        image, label = self.dataset[self.indices[idx]]
+        image, label = super().__getitem__(idx)
         return self.augment(image) if self.augmented else image, label
 
     def augment(self, image):
