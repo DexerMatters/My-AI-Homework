@@ -1,28 +1,28 @@
 models:
   densenet121:
-    block_num: [ 6, 12, 24, 16 ]
+    block_num: [6, 12, 24, 16]
   densenet169:
-    block_num: [ 6, 12, 32, 32 ]
+    block_num: [6, 12, 32, 32]
   densenet201:
-    block_num: [ 6, 12, 48, 32 ]
+    block_num: [6, 12, 48, 32]
   densenet264:
-    block_num: [ 6, 12, 64, 48 ]
+    block_num: [6, 12, 64, 48]
 
   resnet18:
     block_mode: "basic"
-    block_num: [ 2, 2, 2, 2 ]
+    block_num: [2, 2, 2, 2]
   resnet34:
     block_mode: "basic"
-    block_num: [ 3, 4, 6, 3 ]
+    block_num: [3, 4, 6, 3]
   resnet50:
     block_mode: "bottleneck"
-    block_num: [ 3, 4, 6, 3 ]
+    block_num: [3, 4, 6, 3]
   resnet101:
     block_mode: "bottleneck"
-    block_num: [ 3, 4, 23, 3 ]
+    block_num: [3, 4, 23, 3]
   resnet152:
     block_mode: "bottleneck"
-    block_num: [ 3, 8, 36, 3 ]
+    block_num: [3, 8, 36, 3]
 
 train:
   model: "densenet264"
@@ -32,11 +32,11 @@ train:
   optimizer: "sgd"
   momentum: 0.9
   loss: "cross_entropy"
-  metrics: [ "accuracy" ]
+  metrics: ["accuracy"]
   l1: 0
   l2: 0.001
   lr: 0.001
-  lr_strategy: [ 1e-2, 2.5e-3, 1e-3, 2.5e-4, 1e-4 ]
+  lr_strategy: [1.0e-2, 2.5e-3, 1.0e-3, 2.5e-4, 1.0e-4]
   lr_decay_step: 20
 
 data:
@@ -47,4 +47,4 @@ data:
     horizontal_flip_randomness: 0.2
     vertical_flip_randomness: 0.2
     cj_brightness_randomness: 0.2
-  splits: [ 0.8, 0.1, 0.1 ]
+  splits: [0.8, 0.1, 0.1]
