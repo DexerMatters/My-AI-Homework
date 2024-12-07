@@ -36,7 +36,7 @@ def main():
     # Select the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = ds.ImageDataset("./data/")
+    dataset = ds.ImageDataset(utils.get_config()["data"]["root"])
     batch_size = config["batch_size"]
 
     model_name = config["model"]
@@ -138,8 +138,8 @@ def test(
 ):
     model.eval()
     with torch.no_grad():
-        total = 0
-        correct = 0
+        total = 0.00
+        correct = 0.00
         for images, labels in tqdm.tqdm(test_dataloader, desc="Testing"):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)

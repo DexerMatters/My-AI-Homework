@@ -40,7 +40,7 @@ train:
   lr_decay_step: 20
 
 data:
-  root: "./data"
+  root: "./data/PokemonData"
   use_augment: 1
   augmentation:
     rotation_range: 15
