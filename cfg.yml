@@ -25,7 +25,7 @@ models:
     block_num: [3, 8, 36, 3]
 
 train:
-  model: "densenet264"
+  model: "resnet101"
   batch_size: 32
   kfolds: 5
   epochs: 100

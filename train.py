@@ -127,7 +127,7 @@ def validate(model, val_dataloader, criterion, device, val_loss_history):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             valid_loss += criterion(outputs, labels).item()
-    val_loss_history.append(valid_loss)
+    val_loss_history.append(valid_loss / len(val_dataloader))
 
 
 def test(
