@@ -24,8 +24,17 @@ models:
     block_mode: "bottleneck"
     block_num: [3, 8, 36, 3]
 
+  vit_224:
+    d_model: 768
+    n_classes: 150
+    img_size: 224
+    patch_size: 16
+    n_heads: 12
+    n_layers: 12
+    n_channels: 3
+
 train:
-  model: "resnet101"
+  model: "vit_224"
   batch_size: 32
   kfolds: 5
   epochs: 100
