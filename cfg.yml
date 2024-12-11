@@ -26,7 +26,6 @@ models:
 
   vit_224:
     d_model: 768
-    n_classes: 150
     img_size: 224
     patch_size: 16
     n_heads: 12

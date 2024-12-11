@@ -57,14 +57,14 @@ class VisionTransformer(nn.Module):
 
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, img_size, patch_size, in_chans, embed_dim):
+    def __init__(self, img_size, patch_size, in_chans, d_model):
         super().__init__()
         self.img_size = img_size
         self.patch_size = patch_size
         self.n_patches = (img_size // patch_size) ** 2
         self.patch_size = patch_size
         self.proj = nn.Conv2d(
-            in_chans, embed_dim, kernel_size=patch_size, stride=patch_size
+            in_chans, d_model, kernel_size=patch_size, stride=patch_size
         )
 
     def forward(self, x):
@@ -81,14 +81,15 @@ class PositionalEncoding(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
         pe = torch.zeros(max_len, embed_dim)
 
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
         div_term = torch.exp(
             torch.arange(0, embed_dim, 2).float() * (-np.log(10000.0) / embed_dim)
         )
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer("pe", pe.unsqueeze(0))
+        pe = pe.unsqueeze(0)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
         tokens_batch = self.cls_token.expand(x.size(0), -1, -1)
@@ -105,13 +106,14 @@ class AttentionHead(nn.Module):
         self.value = nn.Linear(d_model, head_size)
 
     def forward(self, x):
-        Q = self.query(x)
-        K = self.key(x)
-        V = self.value(x)
+        query = self.query(x)
+        key = self.key(x)
+        value = self.value(x)
 
-        attention = torch.matmul(Q, K.transpose(-2, -1))
-        attention = torch.softmax(attention / np.sqrt(self.head_size), dim=-1)
-        attention = torch.matmul(attention, V)
+        attention = torch.einsum("bqe,bte->bqt", query, key) / self.head_size**0.5
+        attention = torch.softmax(attention, dim=-1)
+        attention = torch.einsum("bqt,bte->bqe", attention, value)
+
         return attention
 
 
@@ -153,10 +155,16 @@ class TransformerEncoder(nn.Module):
         )
 
     def forward(self, x):
-        # Residual Connection After Sublayer 1
-        out = x + self.attn(self.norm1(x))
+        # Sublayer 1 - Normalization
+        out = self.norm1(x)
 
-        # Residual Connection After Sublayer 2
-        out = out + self.mlp(self.norm2(out))
+        # Sublayer 2 - Multi-head attention
+        out = self.attn(out) + x
+
+        # Sublayer 3 - Normalization
+        out = self.norm2(out)
+
+        # Sublayer 4 - Multi-layer perceptron
+        out = self.mlp(out) + out
 
         return out
