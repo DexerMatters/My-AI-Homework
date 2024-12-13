@@ -25,12 +25,18 @@ models:
     block_num: [3, 8, 36, 3]
 
   vit_224:
-    d_model: 768
-    img_size: 224
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    attention_probs_dropout_prob: 0.0
+    hidden_dropout_prob: 0.1
+    intermediate_size: 3072
+    initializer_range: 0.02
+    image_size: 224
     patch_size: 16
-    n_heads: 12
-    n_layers: 12
-    n_channels: 3
+    num_channels: 3
+    use_faster_attention: false
+    qkv_bias: true
 
 train:
   model: "vit_224"
